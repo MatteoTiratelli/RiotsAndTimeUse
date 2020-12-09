@@ -1,6 +1,7 @@
 require(tidyverse)
 require(rvest)
 require(cowplot)
+require(readxl)
 
 ## Tiratelli riots data
 
@@ -15,7 +16,7 @@ riots_nonind$year <- as.numeric(riots_nonind$year)
 
 riots_nonind %>%
   mutate(Period = cut(year, breaks = 4, labels = c('1800-1834','1834-1868',
-                                                    '1868-1902','1902-1936'))) -> riots_nonind
+                                                   '1868-1902','1902-1936'))) -> riots_nonind
 
 riots_nonind %>%
   group_by(Period) %>%
@@ -61,8 +62,8 @@ Navickas %>%
 Navickas %>% drop_na(day) -> Navickas
 
 Navickas$day_1 <- factor(Navickas$day, 
-                               levels = c ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
-                                           'Saturday', 'Sunday'))
+                         levels = c ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
+                                     'Saturday', 'Sunday'))
 Navickas %>%
   group_by(Period) %>%
   count(day_1, .drop = FALSE) -> Totals_p
@@ -101,8 +102,8 @@ Tilly <- Tilly[Tilly$ADAY=="EXACT" & Tilly$TYPE!='STRIKES, TURNOUTS',]
 Tilly %>% drop_na(day) -> Tilly
 
 Tilly$day <- factor(Tilly$day, 
-                        levels = c ('MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 
-                                    'SATURDAY', 'SUNDAY'))
+                    levels = c ('MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 
+                                'SATURDAY', 'SUNDAY'))
 Tilly %>%
   group_by(Period) %>%
   count(day, .drop = FALSE) -> Totals_p
@@ -199,3 +200,38 @@ p4 <- ggplot(Totals_p, aes(x=day, y=Period, fill=Proportion)) + geom_tile(color=
         legend.background= element_rect(fill = "transparent", colour = NA))
 
 save_plot("Combined.pdf", p4, base_width = 6.8, base_height = 4, units = "in")
+
+
+### Historical estimates of days worked per year
+
+temp = tempfile(fileext = ".xlsx")
+URL <- "https://www.bankofengland.co.uk/-/media/boe/files/statistics/research-datasets/a-millennium-of-macroeconomic-data-for-the-uk.xlsx"
+download.file(URL, destfile=temp, mode='wb')
+
+data <- read_excel(temp, sheet = 'A54. Hours worked', skip = 4)
+data <- data[c(1,3,5,6,7,8,10)]
+names(data) <- c('Years', "Allen & Weisdorf (2011): Agriculture", "Allen & Weisdorf (2011): Building trades",
+                 "Humphries & Weisdorf (2016)","Blanchard (1978)", "Clark & van der Werf (1998)", "Voth (2001)")
+
+data$`Voth (2001)` <- data$`Voth (2001)`/10  # Turn estimates of hours worked into estimates of days worked
+
+data %>%
+  pivot_longer(-Years, names_to = "Source", values_to = "Value") -> data
+
+wrapper <- function(x, ...) 
+{
+  paste(strwrap(x, ...), collapse = "\n")
+}
+
+ggplot() +
+  geom_point(na.omit(data[data$Source %in% c('Voth (2001)','Blanchard (1978)'),]), mapping = aes(x = Years, y = Value, shape = Source)) +
+  geom_line(na.omit(data[!data$Source %in% c('Voth (2001)','Blanchard (1978)'),]), mapping = aes(x = Years, y = Value, colour = Source)) +
+  geom_hline(aes(yintercept = 365), linetype = 'dashed') +
+  theme_classic() +
+  labs(title = "Figure 5: Estimates of days worked per year, England (1260 - 1827)",
+       caption = wrapper("Sources: Allen & Weisdorf (2011) give total number of working days needed to purchase a basket of good for agricultural labourers in Southern England and builders in London; Humphries & Weisdorf (2016) calculate the number of days a casual worker would need to work to earn an annually contracted workers wage; Clark & van der Werf (1998) calculate the annual wage divided by the day wage for agricultural labourers in Britain; Voth (2001) estimates days worked on the basis of court records and witness accounts from London and northern England; Blanchard (1978) estimates days worked per year for English miners.", width = 150)) +
+  theme(legend.position = 'right',
+        legend.title = element_blank(),
+        plot.title.position = "plot",
+        plot.caption = element_text(hjust = 0),
+        plot.caption.position = "plot")
