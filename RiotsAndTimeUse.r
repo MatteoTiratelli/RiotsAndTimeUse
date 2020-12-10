@@ -225,9 +225,9 @@ wrapper <- function(x, ...)
 
 ggplot() +
   geom_point(na.omit(data[data$Source %in% c('Voth (2001)','Blanchard (1978)'),]), mapping = aes(x = Years, y = Value, shape = Source)) +
-  geom_line(na.omit(data[!data$Source %in% c('Voth (2001)','Blanchard (1978)'),]), mapping = aes(x = Years, y = Value, colour = Source)) +
+  geom_line(na.omit(data[!data$Source %in% c('Voth (2001)','Blanchard (1978)'),]), mapping = aes(x = Years, y = Value, colour = Source), alpha = 0.75) +
   geom_hline(aes(yintercept = 365), linetype = 'dashed') +
-  theme_classic() +
+  theme_classic() + ylab("Days worked per year") + xlab("Year") +
   labs(title = "Figure 5: Estimates of days worked per year, England (1260 - 1827)",
        caption = wrapper("Sources: Allen & Weisdorf (2011) give total number of working days needed to purchase a basket of good for agricultural labourers in Southern England and builders in London; Humphries & Weisdorf (2016) calculate the number of days a casual worker would need to work to earn an annually contracted workers wage; Clark & van der Werf (1998) calculate the annual wage divided by the day wage for agricultural labourers in Britain; Voth (2001) estimates days worked on the basis of court records and witness accounts from London and northern England; Blanchard (1978) estimates days worked per year for English miners.", width = 150)) +
   theme(legend.position = 'right',
@@ -239,9 +239,9 @@ ggplot() +
 
 
 ggplot() +
-  geom_line(na.omit(data), mapping = aes(x = Years, y = Value, colour = Source), alpha = 0.75) +
+  geom_line(na.omit(data), mapping = aes(x = Years, y = Value, colour = Source)) +
   geom_hline(aes(yintercept = 365), linetype = 'dashed') +
-  theme_classic() +
+  theme_classic() + ylab("Days worked per year") + xlab("Year") +
   guides(colour=guide_legend(nrow=2,byrow=TRUE)) +
   labs(title = "Figure 5: Estimates of days worked per year",
        caption = wrapper("Sources: Allen & Weisdorf (2011) give total number of working days needed to purchase a basket of good for agricultural labourers in Southern England and builders in London; Blanchard (1978) estimates days worked per year for English miners; Clark & van der Werf (1998) calculate the annual wage divided by the day wage for agricultural labourers in Britain; Humphries & Weisdorf (2016) calculate the number of days a casual worker would need to work to earn an annually contracted workers wage; Voth (2001) estimates days worked on the basis of court records and witness accounts from London and northern England.", width = 150)) +
