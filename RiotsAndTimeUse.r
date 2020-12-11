@@ -29,7 +29,7 @@ Totals_p %>%
 p1 <- ggplot(Totals_p, aes(x=Weekday, y=Period, fill=Proportion)) + geom_tile(color="black") + 
   theme_bw() + 
   coord_equal() + 
-  scale_fill_distiller(palette="Greys", direction=1) +
+  scale_fill_distiller(palette="Greys", direction=1, limits = c(0,0.5)) +
   xlab(NULL) + ylab(NULL) + labs(title = "Figure 1: Riots from 1800 to 1939 (n = 311)", 
                                  caption = "Source: Tiratelli (2019)") +
   scale_x_discrete(position = "top", labels = c('M','T','W','T','F','S','S')) +
@@ -75,7 +75,7 @@ Totals_p %>%
 p2 <- ggplot(Totals_p, aes(x=day_1, y=Period, fill=Proportion)) + geom_tile(color="black") + 
   theme_bw() + 
   coord_equal() + 
-  scale_fill_distiller(palette="Greys", direction=1) +
+  scale_fill_distiller(palette="Greys", direction=1, limits = c(0,0.5)) +
   xlab(NULL) + ylab(NULL) + labs(title = "Figure 2: Political meetings from 1790 to 1848 (n = 1,452)", 
                                  caption = "Source: Navickas (2020)")  +
   scale_x_discrete(position = "top", labels = c('M','T','W','T','F','S','S')) +
@@ -115,7 +115,7 @@ Totals_p %>%
 p3 <- ggplot(Totals_p, aes(x=day, y=Period, fill=Proportion)) + geom_tile(color="black") + 
   theme_bw() + 
   coord_equal() + 
-  scale_fill_distiller(palette="Greys", direction=1) +
+  scale_fill_distiller(palette="Greys", direction=1, limits = c(0,0.5)) +
   xlab(NULL) + ylab(NULL) + labs(title = "Figure 3: Contentious gatherings from 1758 to 1834 (n = 5,495)",
                                  caption = "Source: Tilly and Horn (1988)")  +
   scale_x_discrete(position = "top", labels = c('M','T','W','T','F','S','S')) +
@@ -187,7 +187,7 @@ Totals_p %>%
 p4 <- ggplot(Totals_p, aes(x=day, y=Period, fill=Proportion)) + geom_tile(color="black") + 
   theme_bw() + 
   coord_equal() + 
-  scale_fill_distiller(palette="Greys", direction=1) +
+  scale_fill_distiller(palette="Greys", direction=1, limits = c(0,0.5)) +
   xlab(NULL) + ylab(NULL) + labs(title = "Figure 4: Political events from 1758 to 1936 (n = 7,233)",
                                  caption = "Sources: Tilly and Horn (1988), Tiratelli (2019) and Navickas (2020)")  +
   scale_x_discrete(position = "top", labels = c('M','T','W','T','F','S','S')) +
