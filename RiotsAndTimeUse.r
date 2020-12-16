@@ -3,48 +3,60 @@ require(rvest)
 require(cowplot)
 require(readxl)
 
+graph_heatmap <- function(DF, Title, Caption) {
+  ggplot(DF, aes(x=Weekday, y=Period, fill=Proportion)) + geom_tile(color="black") + 
+    theme_bw() + 
+    coord_equal() + 
+    scale_fill_distiller(palette="Greys", direction=1, limits = c(0,0.4)) +
+    xlab(NULL) + ylab(NULL) + labs(title = Title, caption = Caption) +
+    scale_x_discrete(position = "top", labels = c('M','T','W','T','F','S','S')) +
+    theme(axis.ticks = element_blank(),
+          plot.caption = element_text(hjust = 0),
+          plot.caption.position =  "plot",
+          plot.title.position = "plot",
+          panel.background = element_rect(fill = "transparent", colour = NA),
+          plot.background = element_rect(fill = "transparent", colour = NA),
+          legend.background= element_rect(fill = "transparent", colour = NA))
+}
+
 ## Tiratelli riots data
 
-riots <- read_csv('https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Riots.csv')
-riots_nonind <- riots[riots$Industrial=='No',]
-riots_nonind %>% drop_na(Weekday) -> riots_nonind
+Tiratelli <- read_csv('https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Riots.csv')
+Tiratelli <- Tiratelli[Tiratelli$Industrial=='No',]
+Tiratelli$year <- as.numeric(Tiratelli$year)
+Tiratelli$Weekday <- factor(Tiratelli$Weekday, 
+                            levels = c ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
+                                        'Saturday', 'Sunday'))
 
-riots_nonind$Weekday <- factor(riots_nonind$Weekday, 
-                               levels = c ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
-                                           'Saturday', 'Sunday'))
-riots_nonind$year <- as.numeric(riots_nonind$year)
-
-riots_nonind %>%
-  mutate(Period = cut(year, breaks = 4, labels = c('1800-1834','1834-1868',
-                                                   '1868-1902','1902-1936'))) -> riots_nonind
-
-riots_nonind %>%
+Tiratelli %>%
+  mutate(Period = ifelse(year<1835,"1800 - 1834",
+                         ifelse(year<1870 & year>1834,"1835 - 1869",
+                                ifelse(year<1905 & year>1869,"1870 - 1904","1905 - 1939")))) %>%
+  drop_na(Weekday) %>%
   group_by(Period) %>%
-  count(Weekday, .drop = FALSE) -> Totals_p
+  count(Weekday, .drop = FALSE) -> Totals_MT
 
-Totals_p %>%
+Totals_MT %>%
   group_by(Period) %>%
-  mutate(Proportion = n/sum(n)) -> Totals_p
+  mutate(Proportion = n/sum(n)) -> Totals_MT
 
-p1 <- ggplot(Totals_p, aes(x=Weekday, y=Period, fill=Proportion)) + geom_tile(color="black") + 
-  theme_bw() + 
-  coord_equal() + 
-  scale_fill_distiller(palette="Greys", direction=1, limits = c(0,0.5)) +
-  xlab(NULL) + ylab(NULL) + labs(title = "Figure 1: Riots from 1800 to 1939 (n = 311)", 
-                                 caption = "Source: Tiratelli (2019)") +
-  scale_x_discrete(position = "top", labels = c('M','T','W','T','F','S','S')) +
-  theme(axis.ticks = element_blank(),
-        plot.caption = element_text(hjust = 0),
-        plot.caption.position =  "plot",
-        plot.title.position = "plot",
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA),
-        legend.background= element_rect(fill = "transparent", colour = NA))
-
-save_plot("Tiratelli.pdf", p1, base_width = 6.8, base_height = 4, units = "in")
+graph_heatmap(Totals_MT, "Heat map of riots from 1800 to 1939 n = 311", "Source: Tiratelli (2019)")
 
 
-## Navickas data
+## Tiratelli working hours (7am - 7pm)
+
+Tiratelli %>%
+  mutate(Period = ifelse(year>1869,"1870 - 1939","1800 - 1869")) %>%
+  drop_na(Weekday) %>%
+  group_by(Period) %>%
+  count(Weekday, `Working hours (7-7)`, .drop = FALSE) -> Totals_MT_WH
+
+Totals_MT_WH %>%
+  group_by(Period) %>%
+  mutate(Proportion = n/sum(n)) -> Totals_MT_WH
+
+
+## Navickas political meetings data
 
 read_html("http://historyofpublicspace.uk/political-meetings-mapper-2/") %>% 
   html_nodes(css = "table.tablepress") -> Navickas
@@ -55,151 +67,85 @@ Navickas[is.na(Navickas$year),] %>%
   mutate(year = as.numeric(str_sub(Navickas[is.na(Navickas$year),]$date, 1, 4))) -> Navickas[is.na(Navickas$year),]
 Navickas$day <- na_if(Navickas$day,'')
 Navickas <- Navickas[Navickas$year > 1789,]
+Navickas$Weekday <- factor(Navickas$day, 
+                           levels = c ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
+                                       'Saturday', 'Sunday'))
+
 Navickas %>%
   mutate(Period = cut(year, breaks = 4, labels = c("1790 - 1803","1804 - 1818",
-                                                   "1819 - 1833","1834 - 1848"))) -> Navickas
-
-Navickas %>% drop_na(day) -> Navickas
-
-Navickas$day_1 <- factor(Navickas$day, 
-                         levels = c ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
-                                     'Saturday', 'Sunday'))
-Navickas %>%
+                                                   "1819 - 1833","1834 - 1848"))) %>%
+  drop_na(day) %>%
   group_by(Period) %>%
-  count(day_1, .drop = FALSE) -> Totals_p
+  count(Weekday, .drop = FALSE) -> Total_KN
 
-Totals_p %>%
+Totals_KN %>%
   group_by(Period) %>%
-  mutate(Proportion = n/sum(n)) -> Totals_p
+  mutate(Proportion = n/sum(n)) -> Totals_KN
 
-p2 <- ggplot(Totals_p, aes(x=day_1, y=Period, fill=Proportion)) + geom_tile(color="black") + 
-  theme_bw() + 
-  coord_equal() + 
-  scale_fill_distiller(palette="Greys", direction=1, limits = c(0,0.5)) +
-  xlab(NULL) + ylab(NULL) + labs(title = "Figure 2: Political meetings from 1790 to 1848 (n = 1,452)", 
-                                 caption = "Source: Navickas (2020)")  +
-  scale_x_discrete(position = "top", labels = c('M','T','W','T','F','S','S')) +
-  theme(axis.ticks = element_blank(),
-        plot.caption = element_text(hjust = 0),
-        plot.caption.position =  "plot",
-        plot.title.position = "plot",
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA),
-        legend.background= element_rect(fill = "transparent", colour = NA))
+graph_heatmap(Totals_KN, "Heat map of political meetings from 1790 to 1848, n = 1,452", "Source: Navickas (2020)")
 
-save_plot("Navickas.pdf", p2, base_width = 6.8, base_height = 4, units = "in")
 
-## Tilly data
+## Tilly contentious events data
 
 Tilly <- read_csv("https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Tilly_data.csv")
-Tilly$day <- na_if(Tilly$WDAY,'')
+Tilly <- Tilly[Tilly$ADAY=="EXACT" & Tilly$TYPE!='STRIKES, TURNOUTS',]
 Tilly$year <- as.numeric(paste('1',as.character(Tilly$CGIDYEAR),sep=""))
+Tilly$Weekday <- na_if(Tilly$WDAY,'')
+Tilly$Weekday <- Tilly$Weekday
+Tilly$Weekday <- factor(Tilly$Weekday, 
+                        levels = c ('MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 
+                                    'SATURDAY', 'SUNDAY'))
+
 Tilly %>%
   mutate(Period = cut(year, breaks = 4, labels = c("1758 - 1776","1777 - 1795",
-                                                   "1796 - 1814","1815 - 1834"))) -> Tilly
-
-Tilly <- Tilly[Tilly$ADAY=="EXACT" & Tilly$TYPE!='STRIKES, TURNOUTS',]
-Tilly %>% drop_na(day) -> Tilly
-
-Tilly$day <- factor(Tilly$day, 
-                    levels = c ('MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 
-                                'SATURDAY', 'SUNDAY'))
-Tilly %>%
+                                                   "1796 - 1814","1815 - 1834"))) %>%
+  drop_na(Weekday) %>%
   group_by(Period) %>%
-  count(day, .drop = FALSE) -> Totals_p
+  count(Weekday, .drop = FALSE) -> Totals_CT
 
-Totals_p %>%
+Totals_CT %>%
   group_by(Period) %>%
-  mutate(Proportion = n/sum(n)) -> Totals_p
+  mutate(Proportion = n/sum(n)) -> Totals_CT
 
-p3 <- ggplot(Totals_p, aes(x=day, y=Period, fill=Proportion)) + geom_tile(color="black") + 
-  theme_bw() + 
-  coord_equal() + 
-  scale_fill_distiller(palette="Greys", direction=1, limits = c(0,0.5)) +
-  xlab(NULL) + ylab(NULL) + labs(title = "Figure 3: Contentious gatherings from 1758 to 1834 (n = 5,495)",
-                                 caption = "Source: Tilly and Horn (1988)")  +
-  scale_x_discrete(position = "top", labels = c('M','T','W','T','F','S','S')) +
-  theme(axis.ticks = element_blank(),
-        plot.caption = element_text(hjust = 0),
-        plot.caption.position =  "plot",
-        plot.title.position = "plot",
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA),
-        legend.background= element_rect(fill = "transparent", colour = NA))
+graph_heatmap(Totals_CT, "Contentious gatherings from 1758 to 1834 (n = 5,495)", "Source: Tilly and Horn (1988)")
 
-save_plot("Tilly.pdf", p3, base_width = 6.8, base_height = 4, units = "in")
 
 ## Combining
 
-Tiratelli <- read_csv("https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Riots.csv")
-Tiratelli <- Tiratelli[Tiratelli$Industrial=='No',]
-Tiratelli %>% drop_na(Weekday) -> Tiratelli
 Tiratelli$year <- as.numeric(Tiratelli$year)
 Tiratelli$Weekday <- as.character(Tiratelli$Weekday)
-Tiratelli <- rename(Tiratelli, day = Weekday)
 
-read_html("http://historyofpublicspace.uk/political-meetings-mapper-2/") %>% 
-  html_nodes(css = "table.tablepress") -> Navickas
-html_table(Navickas[[1]]) -> Navickas
-as_tibble(Navickas) -> Navickas
-Navickas$year <- as.numeric(str_sub(Navickas$date, start= -4))
-Navickas[is.na(Navickas$year),] %>%
-  mutate(year = as.numeric(str_sub(Navickas[is.na(Navickas$year),]$date, 1, 4))) -> Navickas[is.na(Navickas$year),]
-Navickas$day <- na_if(Navickas$day,'')
-Navickas %>% drop_na(day) -> Navickas
 Navickas$year <- as.numeric(Navickas$year)
-Navickas$day <- as.character(Navickas$day)
+Navickas$Weekday <- as.character(Navickas$Weekday)
 
-
-Tilly <- read_csv("https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Tilly_data.csv")
-Tilly$day <- na_if(Tilly$WDAY,'')
-Tilly$year <- as.numeric(paste('1',as.character(Tilly$CGIDYEAR),sep=""))
-Tilly <- Tilly[Tilly$ADAY=="EXACT" & Tilly$TYPE!='STRIKES, TURNOUTS',]
-Tilly %>% drop_na(day) -> Tilly
-Tilly$day <- as.character(Tilly$day)
+Tilly$year <- as.numeric(Tilly$year)
+Tilly$Weekday <- as.character(Tilly$Weekday)
 
 Tiratelli %>%
-  select(year, day) -> Tiratelli
+  select(year, Weekday) -> Tiratelli
 
 Navickas %>%
-  select(year, day) -> Navickas
+  select(year, Weekday) -> Navickas
 
 Tilly %>%
-  select(year, day) -> Tilly
+  select(year, Weekday) -> Tilly
 
 Data <- bind_rows(Tiratelli, Tilly, Navickas)
-Data$day <- as.factor(Data$day)
-Data$day <- recode_factor(Data$day, 'MONDAY' = "Monday", 'TUESDAY' = "Tuesday", 'WEDNESDAY' = "Wednesday",
-                          'THURSDAY' = "Thursday", 'FRIDAY' = "Friday", 'SATURDAY' = "Saturday", 'SUNDAY' = "Sunday")
+Data$Weekday <- as.factor(Data$Weekday)
+Data$Weekday <- recode_factor(Data$Weekday, 'MONDAY' = "Monday", 'TUESDAY' = "Tuesday", 'WEDNESDAY' = "Wednesday",
+                              'THURSDAY' = "Thursday", 'FRIDAY' = "Friday", 'SATURDAY' = "Saturday", 'SUNDAY' = "Sunday")
 Data %>%
   mutate(Period = cut(year, breaks = 8, labels = c("1758 - 1779","1780 - 1801","1802 - 1824",
                                                    "1825 - 1846","1847 - 1868","1869 - 1891",
-                                                   "1892 - 1913","1914 - 1936"))) -> Data
-
-Data %>%
+                                                   "1892 - 1913","1914 - 1936"))) %>%
   group_by(Period) %>%
-  count(day, .drop = FALSE) -> Totals_p
+  count(Weekday, .drop = FALSE) -> Totals
 
-Totals_p %>%
+Totals %>%
   group_by(Period) %>%
-  mutate(Proportion = n/sum(n)) -> Totals_p
+  mutate(Proportion = n/sum(n)) -> Totals
 
-p4 <- ggplot(Totals_p, aes(x=day, y=Period, fill=Proportion)) + geom_tile(color="black") + 
-  theme_bw() + 
-  coord_equal() + 
-  scale_fill_distiller(palette="Greys", direction=1, limits = c(0,0.5)) +
-  xlab(NULL) + ylab(NULL) + labs(title = "Figure 4: Political events from 1758 to 1936 (n = 7,233)",
-                                 caption = "Sources: Tilly and Horn (1988), Tiratelli (2019) and Navickas (2020)")  +
-  scale_x_discrete(position = "top", labels = c('M','T','W','T','F','S','S')) +
-  theme(axis.ticks = element_blank(),
-        plot.caption = element_text(hjust = 0),
-        plot.caption.position =  "plot",
-        plot.title.position = "plot",
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA),
-        legend.background= element_rect(fill = "transparent", colour = NA))
-
-save_plot("Combined.pdf", p4, base_width = 6.8, base_height = 4, units = "in")
+graph_heatmap(Totals, "Political events from 1758 to 1936 (n = 7,233)", "Sources: Tilly and Horn (1988), Tiratelli (2019) and Navickas (2020)")
 
 
 ### Historical estimates of days worked per year
