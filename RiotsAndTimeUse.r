@@ -40,6 +40,12 @@ Totals_MT %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) -> Totals_MT
 
+Totals_MT[,1:3] %>%
+  pivot_wider(id_cols = Period, names_from = Weekday, values_from = n) %>%
+  column_to_rownames(var="Period") %>%
+  as.data.frame() %>%
+  fisher.test(hybrid = TRUE, simulate.p.value = TRUE)
+
 graph_heatmap(Totals_MT, "Heat map of riots from 1800 to 1939 n = 311", "Source: Tiratelli (2019)")
 
 
@@ -47,9 +53,9 @@ graph_heatmap(Totals_MT, "Heat map of riots from 1800 to 1939 n = 311", "Source:
 
 Tiratelli %>%
   mutate(Period = ifelse(year>1869,"1870 - 1939","1800 - 1869")) %>%
-  drop_na(Weekday) %>%
+  drop_na(Weekday, `Working hours (7-7)`) %>%
   group_by(Period) %>%
-  count(Weekday, `Working hours (7-7)`, .drop = FALSE) -> Totals_MT_WH
+  count(Weekday, `Working hours (7-7)`) -> Totals_MT_WH
 
 Totals_MT_WH %>%
   group_by(Period) %>%
@@ -82,6 +88,12 @@ Totals_KN %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) -> Totals_KN
 
+Totals_KN[,1:3] %>%
+  pivot_wider(id_cols = Period, names_from = Weekday, values_from = n) %>%
+  column_to_rownames(var="Period") %>%
+  as.data.frame() %>%
+  chisq.test(simulate.p.value = TRUE)
+
 graph_heatmap(Totals_KN, "Heat map of political meetings from 1790 to 1848, n = 1,452", "Source: Navickas (2020)")
 
 
@@ -106,6 +118,12 @@ Tilly %>%
 Totals_CT %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) -> Totals_CT
+
+Totals_CT[,1:3] %>%
+  pivot_wider(id_cols = Period, names_from = Weekday, values_from = n) %>%
+  column_to_rownames(var="Period") %>%
+  as.data.frame() %>%
+  chisq.test(simulate.p.value = TRUE)
 
 graph_heatmap(Totals_CT, "Contentious gatherings from 1758 to 1834 (n = 5,495)", "Source: Tilly and Horn (1988)")
 
@@ -156,7 +174,7 @@ download.file(URL, destfile=temp, mode='wb')
 
 data <- read_excel(temp, sheet = 'A54. Hours worked', skip = 4)
 data <- data[c(1,3,5,6,7,8,10)]
-names(data) <- c('Years', "Allen & Weisdorf (2011): Agriculture", "Allen & Weisdorf (2011): Building trades",
+names(data) <- c('Years', "Allen & Weisdorf (2011): Agriculture", "Allen & Weisdorf (2011): Construction",
                  "Humphries & Weisdorf (2016)","Blanchard (1978)", "Clark & van der Werf (1998)", "Voth (2001)")
 
 data$`Voth (2001)` <- data$`Voth (2001)`/10  # Turn estimates of hours worked into estimates of days worked
@@ -168,20 +186,6 @@ wrapper <- function(x, ...)
 {
   paste(strwrap(x, ...), collapse = "\n")
 }
-
-ggplot() +
-  geom_point(na.omit(data[data$Source %in% c('Voth (2001)','Blanchard (1978)'),]), mapping = aes(x = Years, y = Value, shape = Source)) +
-  geom_line(na.omit(data[!data$Source %in% c('Voth (2001)','Blanchard (1978)'),]), mapping = aes(x = Years, y = Value, colour = Source), alpha = 0.75) +
-  geom_hline(aes(yintercept = 365), linetype = 'dashed') +
-  theme_classic() + ylab("Days worked per year") + xlab("Year") +
-  labs(title = "Figure 5: Estimates of days worked per year, England (1260 - 1827)",
-       caption = wrapper("Sources: Allen & Weisdorf (2011) give total number of working days needed to purchase a basket of good for agricultural labourers in Southern England and builders in London; Humphries & Weisdorf (2016) calculate the number of days a casual worker would need to work to earn an annually contracted workers wage; Clark & van der Werf (1998) calculate the annual wage divided by the day wage for agricultural labourers in Britain; Voth (2001) estimates days worked on the basis of court records and witness accounts from London and northern England; Blanchard (1978) estimates days worked per year for English miners.", width = 150)) +
-  theme(legend.position = 'right',
-        legend.title = element_blank(),
-        legend.spacing.y = unit(-0.2, "cm"),
-        plot.title.position = "plot",
-        plot.caption = element_text(hjust = 0),
-        plot.caption.position = "plot")
 
 
 ggplot() +
