@@ -21,7 +21,7 @@ graph_heatmap <- function(DF, Title, Caption) {
 
 ## Tiratelli riots data
 
-Tiratelli <- read_csv('https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Riots.csv')
+Tiratelli <- read_csv('https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Data_Tiratelli.csv')
 Tiratelli <- Tiratelli[Tiratelli$Industrial=='No',]
 Tiratelli$year <- as.numeric(Tiratelli$year)
 Tiratelli$Weekday <- factor(Tiratelli$Weekday, 
@@ -64,10 +64,8 @@ Totals_MT_WH %>%
 
 ## Navickas political meetings data
 
-read_html("http://historyofpublicspace.uk/political-meetings-mapper-2/") %>% 
-  html_nodes(css = "table.tablepress") -> Navickas
-html_table(Navickas[[1]]) -> Navickas
-as_tibble(Navickas) -> Navickas
+
+Navickas <- read_csv("https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Data_Navickas.csv")
 Navickas$year <- as.numeric(str_sub(Navickas$date, start= -4))
 Navickas[is.na(Navickas$year),] %>%
   mutate(year = as.numeric(str_sub(Navickas[is.na(Navickas$year),]$date, 1, 4))) -> Navickas[is.na(Navickas$year),]
@@ -99,7 +97,7 @@ graph_heatmap(Totals_KN, "Heat map of political meetings from 1790 to 1848, n = 
 
 ## Tilly contentious events data
 
-Tilly <- read_csv("https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Tilly_data.csv")
+Tilly <- read_csv("https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Data_Tilly.csv")
 Tilly <- Tilly[Tilly$ADAY=="EXACT" & Tilly$TYPE!='STRIKES, TURNOUTS',]
 Tilly$year <- as.numeric(paste('1',as.character(Tilly$CGIDYEAR),sep=""))
 Tilly$Weekday <- na_if(Tilly$WDAY,'')
