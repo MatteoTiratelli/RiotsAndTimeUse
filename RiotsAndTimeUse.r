@@ -19,6 +19,7 @@ graph_heatmap <- function(DF, Title, Caption) {
           legend.background= element_rect(fill = "transparent", colour = NA))
 }
 
+
 ## Tiratelli riots data
 
 Tiratelli <- read_csv('https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Data_Tiratelli.csv')
@@ -40,16 +41,15 @@ Totals_MT %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) -> Totals_MT
 
+print(Totals_MT, n= Inf) # Table 1
+
 Totals_MT[,1:3] %>%
   pivot_wider(id_cols = Period, names_from = Weekday, values_from = n) %>%
   column_to_rownames(var="Period") %>%
   as.data.frame() %>%
   fisher.test(hybrid = TRUE, simulate.p.value = TRUE)
 
-graph_heatmap(Totals_MT, "Heat map of riots from 1800 to 1939 n = 311", "Source: Tiratelli (2019)")
-
-
-## Tiratelli working hours (7am - 7pm)
+# graph_heatmap(Totals_MT, "Heat map of riots from 1800 to 1939 n = 311", "Source: Tiratelli (2019)")
 
 Tiratelli %>%
   mutate(Period = ifelse(year>1869,"1870 - 1939","1800 - 1869")) %>%
@@ -61,9 +61,10 @@ Totals_MT_WH %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) -> Totals_MT_WH
 
+print(Totals_MT_WH, n= Inf) # Table 2
+
 
 ## Navickas political meetings data
-
 
 Navickas <- read_csv("https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Data_Navickas.csv")
 Navickas$year <- as.numeric(str_sub(Navickas$date, start= -4))
@@ -78,13 +79,15 @@ Navickas$Weekday <- factor(Navickas$day,
 Navickas %>%
   mutate(Period = cut(year, breaks = 4, labels = c("1790 - 1803","1804 - 1818",
                                                    "1819 - 1833","1834 - 1848"))) %>%
-  drop_na(day) %>%
+  drop_na(Weekday) %>%
   group_by(Period) %>%
-  count(Weekday, .drop = FALSE) -> Total_KN
+  count(Weekday, .drop = FALSE) -> Totals_KN
 
 Totals_KN %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) -> Totals_KN
+
+print(Totals_KN, n= Inf) # Table 3
 
 Totals_KN[,1:3] %>%
   pivot_wider(id_cols = Period, names_from = Weekday, values_from = n) %>%
@@ -92,7 +95,20 @@ Totals_KN[,1:3] %>%
   as.data.frame() %>%
   chisq.test(simulate.p.value = TRUE)
 
-graph_heatmap(Totals_KN, "Heat map of political meetings from 1790 to 1848, n = 1,452", "Source: Navickas (2020)")
+#graph_heatmap(Totals_KN, "Heat map of political meetings from 1790 to 1848, n = 1,452", "Source: Navickas (2020)")
+
+Navickas %>%
+  mutate(Period = cut(year, breaks = 2, labels = c("1790 - 1818",
+                                                   "1819 - 1848"))) %>%
+  drop_na(Weekday, `Working hours (7-7)`) %>%
+  group_by(Period) %>%
+  count(Weekday, `Working hours (7-7)`) -> Totals_KN_WH
+
+Totals_KN_WH %>%
+  group_by(Period) %>%
+  mutate(Proportion = n/sum(n)) -> Totals_KN_WH
+
+print(Totals_KN_WH, n= Inf) # Table 4
 
 
 ## Tilly contentious events data
@@ -117,13 +133,15 @@ Totals_CT %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) -> Totals_CT
 
+print(Totals_CT, n= Inf) # Table 5
+
 Totals_CT[,1:3] %>%
   pivot_wider(id_cols = Period, names_from = Weekday, values_from = n) %>%
   column_to_rownames(var="Period") %>%
   as.data.frame() %>%
   chisq.test(simulate.p.value = TRUE)
 
-graph_heatmap(Totals_CT, "Contentious gatherings from 1758 to 1834 (n = 5,495)", "Source: Tilly and Horn (1988)")
+#graph_heatmap(Totals_CT, "Contentious gatherings from 1758 to 1834 (n = 5,495)", "Source: Tilly and Horn (1988)")
 
 
 ## Combining
@@ -154,6 +172,7 @@ Data %>%
   mutate(Period = cut(year, breaks = 8, labels = c("1758 - 1779","1780 - 1801","1802 - 1824",
                                                    "1825 - 1846","1847 - 1868","1869 - 1891",
                                                    "1892 - 1913","1914 - 1936"))) %>%
+  drop_na(Weekday) %>%
   group_by(Period) %>%
   count(Weekday, .drop = FALSE) -> Totals
 
@@ -161,10 +180,10 @@ Totals %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) -> Totals
 
-graph_heatmap(Totals, "Political events from 1758 to 1936 (n = 7,233)", "Sources: Tilly and Horn (1988), Tiratelli (2019) and Navickas (2020)")
+graph_heatmap(Totals, "Figure 1: Political events from 1758 to 1936 (n = 7,233)", "Sources: Tilly and Horn (1988), Tiratelli (2019) and Navickas (2020)")
 
 
-### Historical estimates of days worked per year
+### Historical estimates of days worked per year: Figure 2
 
 temp = tempfile(fileext = ".xlsx")
 URL <- "https://www.bankofengland.co.uk/-/media/boe/files/statistics/research-datasets/a-millennium-of-macroeconomic-data-for-the-uk.xlsx"
@@ -185,13 +204,12 @@ wrapper <- function(x, ...)
   paste(strwrap(x, ...), collapse = "\n")
 }
 
-
 ggplot() +
   geom_line(na.omit(data), mapping = aes(x = Years, y = Value, colour = Source)) +
   geom_hline(aes(yintercept = 365), linetype = 'dashed') +
   theme_classic() + ylab("Days worked per year") + xlab("Year") +
   guides(colour=guide_legend(nrow=2,byrow=TRUE)) +
-  labs(title = "Figure 5: Estimates of days worked per year",
+  labs(title = "Figure 2: Estimates of days worked per year",
        caption = wrapper("Sources: Allen & Weisdorf (2011) give total number of working days needed to purchase a basket of good for agricultural labourers in Southern England and builders in London; Blanchard (1978) estimates days worked per year for English miners; Clark & van der Werf (1998) calculate the annual wage divided by the day wage for agricultural labourers in Britain; Humphries & Weisdorf (2016) calculate the number of days a casual worker would need to work to earn an annually contracted workers wage; Voth (2001) estimates days worked on the basis of court records and witness accounts from London and northern England.", width = 150)) +
   theme(legend.position = "bottom",
         legend.title = element_blank(),
