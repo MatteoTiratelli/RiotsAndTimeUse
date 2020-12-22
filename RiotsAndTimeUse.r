@@ -206,12 +206,13 @@ wrapper <- function(x, ...)
 }
 
 ggplot() +
-  geom_line(na.omit(data), mapping = aes(x = Years, y = Value, colour = Source)) +
+  geom_line(na.omit(data[!data$Source %in% points,]), mapping = aes(x = Years, y = Value, linetype = Source)) +
+  geom_point(na.omit(data[data$Source %in% points,]), mapping = aes(x = Years, y = Value, shape = Source), size = 2) +
   geom_hline(aes(yintercept = 365), linetype = 'dashed') +
   theme_classic() + ylab("Days worked per year") + xlab("Year") +
-  guides(colour=guide_legend(nrow=2,byrow=TRUE)) +
-  labs(title = "Figure 2: Estimates of days worked per year",
-       caption = wrapper("Allen & Weisdorf (2011) estimate the total number of working days needed to purchase a basket of good for agricultural labourers in Southern England and builders in London; Blanchard (1978) estimates days worked per year for English miners; Clark & van der Werf (1998) assume perfect arbitrage and divide the annual wage by the day wage for agricultural labourers in Britain; Humphries & Weisdorf (2016) repeat the arbitrage calculation for a much larger sample of annually and casually contracted workers in different trades across Britain; Voth (2001) estimates days worked on the basis of court records and witness accounts from London and northern England.", width = 150)) +
+  guides(linetype = guide_legend(nrow=2,byrow=TRUE, order = 1), shape = guide_legend(nrow=2,byrow=TRUE, order = 2)) +
+  #labs(title = "Figure 3: Estimates of days worked per year",
+  #     caption = wrapper("Allen & Weisdorf (2011) estimate the total number of working days needed to purchase a basket of good for agricultural labourers in Southern England and builders in London; Blanchard (1978) estimates days worked per year for English miners; Clark & van der Werf (1998) assume perfect arbitrage and divide the annual wage by the day wage for agricultural labourers in Britain; Humphries & Weisdorf (2016) repeat the arbitrage calculation for a much larger sample of annually and casually contracted workers in different trades across Britain; Voth (2001) estimates days worked on the basis of court records and witness accounts from London and northern England.", width = 150)) +
   theme(legend.position = "bottom",
         legend.title = element_blank(),
         plot.title.position = "plot",
