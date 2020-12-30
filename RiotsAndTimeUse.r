@@ -1,7 +1,6 @@
 require(tidyverse)
 require(rvest)
 require(cowplot)
-require(readxl)
 
 graph_heatmap <- function(DF, Title, Caption) {
   ggplot(DF, aes(x=Weekday, y=Period, fill=Proportion)) + geom_tile(color="black") + 
@@ -22,7 +21,17 @@ graph_heatmap <- function(DF, Title, Caption) {
 
 EventWorkingMonday_reg <- function(DF, MinYear) {
   DF %>%
+    drop_na(Weekday, `Working hours (7-7)`) %>%
     mutate(Outcome = ifelse(`Working hours (7-7)` == "Y" & Weekday == "Monday",1,0),
+           Treatment = year - MinYear) %>%
+    glm(Outcome ~ Treatment, data=., family = binomial(link = "logit")) %>%
+    summary()
+}
+
+EventWorkingHours_reg <- function(DF, MinYear) {
+  DF %>%
+    drop_na(Weekday, `Working hours (7-7)`) %>%
+    mutate(Outcome = ifelse(`Working hours (7-7)` == "Y" & Weekday %in% c("Tuesday", "Wednesday","Thursday","Friday"),1,0),
            Treatment = year - MinYear) %>%
     glm(Outcome ~ Treatment, data=., family = binomial(link = "logit")) %>%
     summary()
@@ -41,39 +50,30 @@ Navickas$Weekday <- factor(Navickas$day,
                            levels = c ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
                                        'Saturday', 'Sunday'))
 
+# Navickas analysis
+
 Navickas %>%
   mutate(Period = cut(year, breaks = 4, labels = c("1790 - 1803","1804 - 1818",
                                                    "1819 - 1833","1834 - 1848"))) %>%
   drop_na(Weekday) %>%
   group_by(Period) %>%
-  count(Weekday, .drop = FALSE) -> Totals_KN
-
-Totals_KN %>%
+  count(Weekday, .drop = FALSE) %>%
   group_by(Period) %>%
-  mutate(Proportion = n/sum(n)) -> Totals_KN
-
-print(Totals_KN, n= Inf) ## Table 1
-
-Totals_KN[,1:3] %>%
-  pivot_wider(id_cols = Period, names_from = Weekday, values_from = n) %>%
-  column_to_rownames(var="Period") %>%
-  as.data.frame() %>%
-  chisq.test(simulate.p.value = TRUE)
+  mutate(Proportion = n/sum(n)) %>%
+  print(., n= Inf) # Table 1
 
 Navickas %>%
   mutate(Period = cut(year, breaks = 2, labels = c("1790 - 1818",
                                                    "1819 - 1848"))) %>%
   drop_na(Weekday, `Working hours (7-7)`) %>%
   group_by(Period) %>%
-  count(Weekday, `Working hours (7-7)`) -> Totals_KN_WH
-
-Totals_KN_WH %>%
+  count(Weekday, `Working hours (7-7)`) %>%
   group_by(Period) %>%
-  mutate(Proportion = n/sum(n)) -> Totals_KN_WH
+  mutate(Proportion = n/sum(n)) %>%
+  print(., n= Inf) # Table 2
 
-print(Totals_KN_WH, n= Inf) ## Table 2
-
-EventWorkingMonday_reg(Navickas, 1790)
+EventWorkingMonday_reg(Navickas, 1790) # n = 454
+EventWorkingHours_reg(Navickas, 1790) # n = 454
 
 
 ########## Tiratelli riots data
@@ -85,39 +85,30 @@ Tiratelli$Weekday <- factor(Tiratelli$Weekday,
                             levels = c ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
                                         'Saturday', 'Sunday'))
 
+# Tiratelli analysis
+
 Tiratelli %>%
   mutate(Period = ifelse(year<1835,"1800 - 1834",
                          ifelse(year<1870 & year>1834,"1835 - 1869",
                                 ifelse(year<1905 & year>1869,"1870 - 1904","1905 - 1939")))) %>%
   drop_na(Weekday) %>%
   group_by(Period) %>%
-  count(Weekday, .drop = FALSE) -> Totals_MT
-
-Totals_MT %>%
+  count(Weekday, .drop = FALSE) %>%
   group_by(Period) %>%
-  mutate(Proportion = n/sum(n)) -> Totals_MT
-
-print(Totals_MT, n= Inf) ## Table 3
-
-Totals_MT[,1:3] %>%
-  pivot_wider(id_cols = Period, names_from = Weekday, values_from = n) %>%
-  column_to_rownames(var="Period") %>%
-  as.data.frame() %>%
-  fisher.test(hybrid = TRUE, simulate.p.value = TRUE)
+  mutate(Proportion = n/sum(n)) %>%
+  print(., n= Inf) # Table 3
 
 Tiratelli %>%
   mutate(Period = ifelse(year>1869,"1870 - 1939","1800 - 1869")) %>%
   drop_na(Weekday, `Working hours (7-7)`) %>%
   group_by(Period) %>%
-  count(Weekday, `Working hours (7-7)`) -> Totals_MT_WH
-
-Totals_MT_WH %>%
+  count(Weekday, `Working hours (7-7)`) %>%
   group_by(Period) %>%
-  mutate(Proportion = n/sum(n)) -> Totals_MT_WH
+  mutate(Proportion = n/sum(n)) %>%
+  print(., n= Inf) # Table 4
 
-print(Totals_MT_WH, n= Inf) ## Table 4
-
-EventWorkingMonday_reg(Tiratelli, 1800)
+EventWorkingMonday_reg(Tiratelli, 1800) # n = 261
+EventWorkingHours_reg(Tiratelli, 1800) # n = 261
 
 
 ########## Tilly contentious events data
@@ -131,43 +122,32 @@ Tilly$Weekday <- factor(Tilly$Weekday,
                         levels = c ('MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 
                                     'SATURDAY', 'SUNDAY'))
 
+# Tilly analysis
+
 Tilly %>%
   mutate(Period = cut(year, breaks = 4, labels = c("1758 - 1776","1777 - 1795",
                                                    "1796 - 1814","1815 - 1834"))) %>%
   drop_na(Weekday) %>%
   group_by(Period) %>%
-  count(Weekday, .drop = FALSE) -> Totals_CT
-
-Totals_CT %>%
+  count(Weekday, .drop = FALSE) %>%
   group_by(Period) %>%
-  mutate(Proportion = n/sum(n)) -> Totals_CT
-
-print(Totals_CT, n= Inf) ## Table 5
-
-Totals_CT[,1:3] %>%
-  pivot_wider(id_cols = Period, names_from = Weekday, values_from = n) %>%
-  column_to_rownames(var="Period") %>%
-  as.data.frame() %>%
-  chisq.test(simulate.p.value = TRUE)
+  mutate(Proportion = n/sum(n)) %>%
+  print(,, n= Inf) # Table 5
 
 
 ########## Combining
 
 Tiratelli$year <- as.numeric(Tiratelli$year)
 Tiratelli$Weekday <- as.character(Tiratelli$Weekday)
-
 Navickas$year <- as.numeric(Navickas$year)
 Navickas$Weekday <- as.character(Navickas$Weekday)
-
 Tilly$year <- as.numeric(Tilly$year)
 Tilly$Weekday <- as.character(Tilly$Weekday)
 
 Tiratelli %>%
   select(year, Weekday) -> Tiratelli
-
 Navickas %>%
   select(year, Weekday) -> Navickas
-
 Tilly %>%
   select(year, Weekday) -> Tilly
 
@@ -175,15 +155,14 @@ Data <- bind_rows(Tiratelli, Tilly, Navickas)
 Data$Weekday <- as.factor(Data$Weekday)
 Data$Weekday <- recode_factor(Data$Weekday, 'MONDAY' = "Monday", 'TUESDAY' = "Tuesday", 'WEDNESDAY' = "Wednesday",
                               'THURSDAY' = "Thursday", 'FRIDAY' = "Friday", 'SATURDAY' = "Saturday", 'SUNDAY' = "Sunday")
+
 Data %>%
   mutate(Period = cut(year, breaks = 8, labels = c("1758 - 1779","1780 - 1801","1802 - 1824",
                                                    "1825 - 1846","1847 - 1868","1869 - 1891",
                                                    "1892 - 1913","1914 - 1936"))) %>%
   drop_na(Weekday) %>%
   group_by(Period) %>%
-  count(Weekday, .drop = FALSE) -> Totals
-
-Totals %>%
+  count(Weekday, .drop = FALSE) %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) -> Totals
 
