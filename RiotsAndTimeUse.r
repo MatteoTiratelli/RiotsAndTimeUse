@@ -1,6 +1,7 @@
 require(tidyverse)
 require(rvest)
 require(cowplot)
+require(readxl)
 
 graph_heatmap <- function(DF, Title, Caption) {
   ggplot(DF, aes(x=Weekday, y=Period, fill=Proportion)) + geom_tile(color="black") + 
@@ -184,6 +185,8 @@ data$`Voth (2001)` <- data$`Voth (2001)`/10  # Turn estimates of hours worked in
 
 data %>%
   pivot_longer(-Years, names_to = "Source", values_to = "Value") -> data
+
+points <- c("Blanchard (1978)","Voth (2001)")
 
 #wrapper <- function(x, ...) {paste(strwrap(x, ...), collapse = "\n")}
 
