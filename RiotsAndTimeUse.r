@@ -38,8 +38,9 @@ EventWorkingHours_reg <- function(DF, MinYear) {
     summary()
 }
 
+########################################
 
-########## Navickas political meetings data
+# Navickas political meetings data: Table 2 and 3
 
 Navickas <- read_csv("https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Data_Navickas.csv")
 Navickas$year <- as.numeric(str_sub(Navickas$date, start= -4))
@@ -61,7 +62,7 @@ Navickas %>%
   count(Weekday, .drop = FALSE) %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) %>%
-  print(., n= Inf) # Table 1
+  print(., n= Inf) # Table 2
 
 Navickas %>%
   mutate(Period = cut(year, breaks = 2, labels = c("1790 - 1818",
@@ -71,13 +72,40 @@ Navickas %>%
   count(Weekday, `Working hours (7-7)`) %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) %>%
-  print(., n= Inf) # Table 2
+  print(., n= Inf) # Table 3
 
 EventWorkingMonday_reg(Navickas, 1790) # n = 454
 EventWorkingHours_reg(Navickas, 1790) # n = 454
 
+# Political meetings in different local economic contexts
 
-########## Tiratelli riots data
+MancAndBlackburn <- c("Manchester", "Blackburn")
+
+Navickas %>%
+  mutate(Period = cut(year, breaks = 4, labels = c("1790 - 1803","1804 - 1818",
+                                                   "1819 - 1833","1834 - 1848"))) %>%
+  drop_na(Weekday) %>%
+  filter(place %in% MancAndBlackburn) %>%
+  group_by(Period) %>%
+  count(Weekday, .drop = FALSE) %>%
+  group_by(Period) %>%
+  mutate(Proportion = n/sum(n)) %>%
+  print(., n= Inf)
+
+Navickas %>%
+  mutate(Period = cut(year, breaks = 2, labels = c("1790 - 1818",
+                                                   "1819 - 1848"))) %>%
+  drop_na(Weekday, `Working hours (7-7)`) %>%
+  filter(place %in% MancAndBlackburn) %>%
+  group_by(Period) %>%
+  count(Weekday, `Working hours (7-7)`) %>%
+  group_by(Period) %>%
+  mutate(Proportion = n/sum(n)) %>%
+  print(., n= Inf)
+
+########################################
+
+# Tiratelli riots data: Table 4 and 5
 
 Tiratelli <- read_csv('https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Data_Tiratelli.csv')
 Tiratelli <- Tiratelli[Tiratelli$Industrial=='No',]
@@ -97,7 +125,7 @@ Tiratelli %>%
   count(Weekday, .drop = FALSE) %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) %>%
-  print(., n= Inf) # Table 3
+  print(., n= Inf) # Table 4
 
 Tiratelli %>%
   mutate(Period = ifelse(year>1869,"1870 - 1939","1800 - 1869")) %>%
@@ -106,13 +134,40 @@ Tiratelli %>%
   count(Weekday, `Working hours (7-7)`) %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) %>%
-  print(., n= Inf) # Table 4
+  print(., n= Inf) # Table 5
 
 EventWorkingMonday_reg(Tiratelli, 1800) # n = 261
 EventWorkingHours_reg(Tiratelli, 1800) # n = 261
 
+# Riots in different local economic contexts
 
-########## Tilly contentious events data
+Tiratelli %>%
+  mutate(Period = ifelse(year<1835,"1800 - 1834",
+                         ifelse(year<1870 & year>1834,"1835 - 1869",
+                                ifelse(year<1905 & year>1869,"1870 - 1904","1905 - 1939")))) %>%
+  drop_na(Weekday) %>%
+  filter(City %in% c("Liverpool","Glasgow")) %>%
+  group_by(Period) %>%
+  count(Weekday, .drop = FALSE) %>%
+  group_by(Period) %>%
+  mutate(Proportion = n/sum(n)) %>%
+  print(., n= Inf)
+  
+Tiratelli %>%
+  mutate(Period = ifelse(year<1835,"1800 - 1834",
+                         ifelse(year<1870 & year>1834,"1835 - 1869",
+                                ifelse(year<1905 & year>1869,"1870 - 1904","1905 - 1939")))) %>%
+  drop_na(Weekday) %>%
+  filter(City %in% c("Manchester")) %>%
+  group_by(Period) %>%
+  count(Weekday, .drop = FALSE) %>%
+  group_by(Period) %>%
+  mutate(Proportion = n/sum(n)) %>%
+  print(., n= Inf)
+
+########################################
+
+# Tilly contentious events data: Table 6
 
 Tilly <- read_csv("https://raw.githubusercontent.com/MatteoTiratelli/RiotsAndTimeUse/main/Data_Tilly.csv")
 Tilly <- Tilly[Tilly$ADAY=="EXACT" & Tilly$TYPE!='STRIKES, TURNOUTS',]
@@ -133,44 +188,12 @@ Tilly %>%
   count(Weekday, .drop = FALSE) %>%
   group_by(Period) %>%
   mutate(Proportion = n/sum(n)) %>%
-  print(,, n= Inf) # Table 5
+  print(., n= Inf) # Table 6
 
 
-########## Combining
+########################################
 
-Tiratelli$year <- as.numeric(Tiratelli$year)
-Tiratelli$Weekday <- as.character(Tiratelli$Weekday)
-Navickas$year <- as.numeric(Navickas$year)
-Navickas$Weekday <- as.character(Navickas$Weekday)
-Tilly$year <- as.numeric(Tilly$year)
-Tilly$Weekday <- as.character(Tilly$Weekday)
-
-Tiratelli %>%
-  select(year, Weekday) -> Tiratelli
-Navickas %>%
-  select(year, Weekday) -> Navickas
-Tilly %>%
-  select(year, Weekday) -> Tilly
-
-Data <- bind_rows(Tiratelli, Tilly, Navickas)
-Data$Weekday <- as.factor(Data$Weekday)
-Data$Weekday <- recode_factor(Data$Weekday, 'MONDAY' = "Monday", 'TUESDAY' = "Tuesday", 'WEDNESDAY' = "Wednesday",
-                              'THURSDAY' = "Thursday", 'FRIDAY' = "Friday", 'SATURDAY' = "Saturday", 'SUNDAY' = "Sunday")
-
-Data %>%
-  mutate(Period = cut(year, breaks = 8, labels = c("1758 - 1779","1780 - 1801","1802 - 1824",
-                                                   "1825 - 1846","1847 - 1868","1869 - 1891",
-                                                   "1892 - 1913","1914 - 1936"))) %>%
-  drop_na(Weekday) %>%
-  group_by(Period) %>%
-  count(Weekday, .drop = FALSE) %>%
-  group_by(Period) %>%
-  mutate(Proportion = n/sum(n)) -> Totals
-
-graph_heatmap(Totals, "Figure 1: Political events from 1758 to 1936 (n = 7,233)", "Sources: Tilly and Horn (1988), Tiratelli (2019) and Navickas (2020)")
-
-
-########## Historical estimates of days worked per year: Figure 2
+# Historical estimates of days worked per year: Figure 1
 
 temp = tempfile(fileext = ".xlsx")
 URL <- "https://www.bankofengland.co.uk/-/media/boe/files/statistics/research-datasets/a-millennium-of-macroeconomic-data-for-the-uk.xlsx"
@@ -208,3 +231,76 @@ ggplot() +
         plot.background = element_rect(fill = "transparent", colour = NA),
         legend.background= element_rect(fill = "transparent", colour = NA),
   )
+
+
+########################################
+
+# Robustness tests
+
+# Navickas large events
+
+Navickas$attendance <- ifelse(Navickas$attendance == "20,000", "20000", Navickas$attendance)
+Navickas$NUM <- as.numeric(Navickas$attendance)
+
+for (i in c(99,499,999)) {
+  Navickas %>%
+    mutate(Period = cut(year, breaks = 4, labels = c("1790 - 1803","1804 - 1818",
+                                                     "1819 - 1833","1834 - 1848"))) %>%
+    drop_na(Weekday, NUM) %>%
+    filter(NUM > i) %>%
+    group_by(Period) %>%
+    count(Weekday, .drop = FALSE) %>%
+    group_by(Period) %>%
+    mutate(Proportion = n/sum(n)) %>%
+    print(., n= Inf)
+}
+
+# Tilly large events
+
+for (i in c(99,499,999)) {
+  Tilly %>%
+    mutate(Period = cut(year, breaks = 4, labels = c("1758 - 1776","1777 - 1795",
+                                                     "1796 - 1814","1815 - 1834"))) %>%
+    drop_na(Weekday,PNUM) %>%
+    filter(PNUM > i) %>%
+    group_by(Period) %>%
+    count(Weekday, .drop = FALSE) %>%
+    group_by(Period) %>%
+    mutate(Proportion = n/sum(n)) %>%
+    print(., n= Inf)
+}
+
+########################################
+
+# Combining
+
+Tiratelli$year <- as.numeric(Tiratelli$year)
+Tiratelli$Weekday <- as.character(Tiratelli$Weekday)
+Navickas$year <- as.numeric(Navickas$year)
+Navickas$Weekday <- as.character(Navickas$Weekday)
+Tilly$year <- as.numeric(Tilly$year)
+Tilly$Weekday <- as.character(Tilly$Weekday)
+
+Tiratelli %>%
+  select(year, Weekday) -> Tiratelli
+Navickas %>%
+  select(year, Weekday) -> Navickas
+Tilly %>%
+  select(year, Weekday) -> Tilly
+
+Data <- bind_rows(Tiratelli, Tilly, Navickas)
+Data$Weekday <- as.factor(Data$Weekday)
+Data$Weekday <- recode_factor(Data$Weekday, 'MONDAY' = "Monday", 'TUESDAY' = "Tuesday", 'WEDNESDAY' = "Wednesday",
+                              'THURSDAY' = "Thursday", 'FRIDAY' = "Friday", 'SATURDAY' = "Saturday", 'SUNDAY' = "Sunday")
+
+Data %>%
+  mutate(Period = cut(year, breaks = 8, labels = c("1758 - 1779","1780 - 1801","1802 - 1824",
+                                                   "1825 - 1846","1847 - 1868","1869 - 1891",
+                                                   "1892 - 1913","1914 - 1936"))) %>%
+  drop_na(Weekday) %>%
+  group_by(Period) %>%
+  count(Weekday, .drop = FALSE) %>%
+  group_by(Period) %>%
+  mutate(Proportion = n/sum(n)) -> Totals
+
+graph_heatmap(Totals, "Figure 1: Political events from 1758 to 1936 (n = 7,233)", "Sources: Tilly and Horn (1988), Tiratelli (2019) and Navickas (2020)")
