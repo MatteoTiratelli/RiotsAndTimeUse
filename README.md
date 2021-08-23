@@ -6,3 +6,5 @@ Riots and time use in the long nineteenth century
 - Data_Tiratelli.csv: Contains data on riots in Manchester, Liverpool and Glasgow from 1800 to 1939 (Tiratelli 2019)
 - RiotsAndTimeUse.r: Contains the R script to produce graphs/tables from this data 
 - Graphs: Contains pdfs of each of the graphs
+
+Manuscript is available at https://osf.io/preprints/socarxiv/q2sdj/
