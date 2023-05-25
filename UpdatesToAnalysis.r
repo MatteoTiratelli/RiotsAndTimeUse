@@ -8,6 +8,14 @@ data %>%
   ggplot(aes(x = year)) + geom_density()
 
 data %>%
+  filter(author == "Family and Community Historical Research Society") %>% 
+  filter(year > 1700) %>%
+  drop_na(Weekday) %>%
+  count(Weekday, .drop = FALSE) %>%
+  mutate(Proportion = n/sum(n)) %>%
+  print(., n= Inf)
+
+data %>%
   filter(author == "John Bohstedt") %>%
   drop_na(Weekday) %>%
   filter(year > 1730) %>%
@@ -15,13 +23,5 @@ data %>%
   group_by(Period) %>%
   count(Weekday, .drop = FALSE) %>%
   group_by(Period) %>%
-  mutate(Proportion = n/sum(n)) %>%
-  print(., n= Inf)
-
-data %>%
-  filter(author == "Family and Community Historical Research Society") %>% 
-  filter(year > 1700) %>%
-  drop_na(Weekday) %>%
-  count(Weekday, .drop = FALSE) %>%
   mutate(Proportion = n/sum(n)) %>%
   print(., n= Inf)
